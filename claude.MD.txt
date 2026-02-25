@@ -1,0 +1,1 @@
+Let's make a financial tracker, expense report, budget calculator with clean modern design and pie charts etc.
