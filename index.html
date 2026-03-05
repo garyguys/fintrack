@@ -347,6 +347,12 @@ tr:hover td { background: var(--surface2); }
 
 .badge { cursor: pointer; }
 
+/* Sub-tab toggle */
+.subtab-bar { display: flex; gap: 0; margin-bottom: 20px; background: var(--surface2); border-radius: 8px; padding: 3px; width: fit-content; }
+.subtab-btn { padding: 8px 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-dim); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.subtab-btn.active { background: var(--accent); color: #fff; }
+.subtab-btn:hover:not(.active) { color: var(--text); }
+
 .context-menu {
   display: none;
   position: fixed;
@@ -727,7 +733,7 @@ kbd {
     <!-- Tasks (top-level) -->
     <div class="nav-section" id="nav-tasks" onclick="selectSection('tasks')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      Tasks
+      Tasks &amp; Ideas
     </div>
 
     <!-- Finances (collapsible section) -->
@@ -1028,53 +1034,107 @@ kbd {
       </div>
     </div>
 
-    <!-- ===== TASKS ===== -->
+    <!-- ===== TASKS & IDEAS ===== -->
     <div class="page active" id="page-tasks">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px">
-        <h1>Tasks</h1>
-        <button class="btn btn-primary" onclick="openTaskModal()">+ Add Task</button>
+      <div class="subtab-bar">
+        <button class="subtab-btn active" id="subtab-tasks" onclick="switchSubTab('tasks')">Tasks</button>
+        <button class="subtab-btn" id="subtab-ideas" onclick="switchSubTab('ideas')">Ideas</button>
       </div>
 
-      <div class="filter-bar">
-        <div class="form-group">
-          <label>Search</label>
-          <input type="text" id="task-filter-search" placeholder="Task name..." oninput="taskPage=1; renderTasks()">
+      <!-- Tasks Content -->
+      <div id="tasks-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px">
+          <h1>Tasks</h1>
+          <button class="btn btn-primary" onclick="openTaskModal()">+ Add Task</button>
         </div>
-        <div class="form-group">
-          <label>Priority</label>
-          <select id="task-filter-priority" onchange="taskPage=1; renderTasks()">
-            <option value="">All</option>
-            <option value="most-important">Most Important</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
+        <div class="filter-bar">
+          <div class="form-group">
+            <label>Search</label>
+            <input type="text" id="task-filter-search" placeholder="Task name..." oninput="taskPage=1; renderTasks()">
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="task-filter-priority" onchange="taskPage=1; renderTasks()">
+              <option value="">All</option>
+              <option value="most-important">Most Important</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <label>&nbsp;</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; text-transform:none; letter-spacing:0">
+              <span class="task-check-wrap" style="display:inline-block"><input type="checkbox" id="task-show-completed" onchange="taskPage=1; renderTasks()" checked><span class="task-check-mark"></span></span>
+              Show completed
+            </label>
+          </div>
         </div>
-        <div class="form-group" style="justify-content:flex-end">
-          <label>&nbsp;</label>
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; text-transform:none; letter-spacing:0">
-            <span class="task-check-wrap" style="display:inline-block"><input type="checkbox" id="task-show-completed" onchange="taskPage=1; renderTasks()" checked><span class="task-check-mark"></span></span>
-            Show completed
-          </label>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:30px"></th>
+                <th style="cursor:pointer" onclick="sortTasks('name')">Task Name <span id="sort-task-name-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortTasks('estTime')">Est. Time <span id="sort-task-time-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortTasks('dueDate')">Due Date <span id="sort-task-due-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortTasks('priority')">Priority <span id="sort-task-priority-icon"></span></th>
+                <th>Description</th>
+              </tr></thead>
+              <tbody id="tasks-body"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="task-pagination"></div>
+          <div id="tasks-summary" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim)"></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th style="width:30px"></th>
-              <th style="cursor:pointer" onclick="sortTasks('name')">Task Name <span id="sort-task-name-icon"></span></th>
-              <th style="cursor:pointer" onclick="sortTasks('estTime')">Est. Time <span id="sort-task-time-icon"></span></th>
-              <th style="cursor:pointer" onclick="sortTasks('dueDate')">Due Date <span id="sort-task-due-icon"></span></th>
-              <th style="cursor:pointer" onclick="sortTasks('priority')">Priority <span id="sort-task-priority-icon"></span></th>
-              <th>Description</th>
-            </tr></thead>
-            <tbody id="tasks-body"></tbody>
-          </table>
+      <!-- Ideas Content -->
+      <div id="ideas-content" style="display:none">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px">
+          <h1>Ideas</h1>
+          <button class="btn btn-primary" onclick="openIdeaModal()">+ Add Idea</button>
         </div>
-        <div class="pagination" id="task-pagination"></div>
-        <div id="tasks-summary" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim)"></div>
+        <div class="filter-bar">
+          <div class="form-group">
+            <label>Search</label>
+            <input type="text" id="idea-filter-search" placeholder="Idea name..." oninput="ideaPage=1; renderIdeas()">
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="idea-filter-priority" onchange="ideaPage=1; renderIdeas()">
+              <option value="">All</option>
+              <option value="most-important">Most Important</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <label>&nbsp;</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; text-transform:none; letter-spacing:0">
+              <span class="task-check-wrap" style="display:inline-block"><input type="checkbox" id="idea-show-completed" onchange="ideaPage=1; renderIdeas()" checked><span class="task-check-mark"></span></span>
+              Show completed
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:30px"></th>
+                <th style="cursor:pointer" onclick="sortIdeas('name')">Idea Name <span id="sort-idea-name-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortIdeas('estTime')">Est. Time <span id="sort-idea-time-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortIdeas('dueDate')">Due Date <span id="sort-idea-due-icon"></span></th>
+                <th style="cursor:pointer" onclick="sortIdeas('priority')">Priority <span id="sort-idea-priority-icon"></span></th>
+                <th>Description</th>
+              </tr></thead>
+              <tbody id="ideas-body"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="idea-pagination"></div>
+          <div id="ideas-summary" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim)"></div>
+        </div>
       </div>
     </div>
 
@@ -1144,6 +1204,51 @@ kbd {
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveTask()">Save</button>
       <button class="btn btn-outline" onclick="closeModal('modal-task')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Idea Context Menu -->
+<div class="context-menu" id="idea-context-menu">
+  <div class="context-menu-item" onclick="ctxEditIdea()">Edit</div>
+  <div class="context-menu-item danger" onclick="ctxDeleteIdea()">Delete</div>
+</div>
+
+<!-- Idea Modal -->
+<div class="modal-overlay" id="modal-idea">
+  <div class="modal">
+    <div class="modal-title" id="modal-idea-title">Add Idea</div>
+    <input type="hidden" id="idea-edit-id">
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Idea Name</label>
+      <input type="text" id="idea-name" placeholder="e.g. Build a mobile app">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Est. Time (minutes)</label>
+        <input type="number" id="idea-est-time" min="0" placeholder="60">
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="idea-due-date">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Priority</label>
+      <select id="idea-priority">
+        <option value="most-important">Most Important</option>
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Description (optional)</label>
+      <textarea id="idea-description" placeholder="Details..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveIdea()">Save</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-idea')">Cancel</button>
     </div>
   </div>
 </div>
@@ -1359,6 +1464,7 @@ let budgets = {};
 let goals = [];
 let recurring = [];
 let todos = [];
+let ideas = [];
 let categories = [...DEFAULT_CATEGORIES];
 let settings = { currency: '$' };
 
@@ -1371,6 +1477,7 @@ function saveAll() {
   saveLocal('goals', goals);
   saveLocal('recurring', recurring);
   saveLocal('todos', todos);
+  saveLocal('ideas', ideas);
   saveLocal('categories', categories);
   saveLocal('settings', settings);
 
@@ -1378,7 +1485,7 @@ function saveAll() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       window.fileStorage.saveData({
-        transactions, budgets, goals, recurring, todos, categories, settings
+        transactions, budgets, goals, recurring, todos, ideas, categories, settings
       });
     }, 300);
   }
@@ -1398,6 +1505,7 @@ async function loadAllData() {
     goals = data.goals || [];
     recurring = data.recurring || [];
     todos = data.todos || [];
+    ideas = data.ideas || [];
     categories = data.categories || [...DEFAULT_CATEGORIES];
     settings = data.settings || { currency: '$' };
   } else {
@@ -1407,6 +1515,7 @@ async function loadAllData() {
     goals = loadLocal('goals', []);
     recurring = loadLocal('recurring', []);
     todos = loadLocal('todos', []);
+    ideas = loadLocal('ideas', []);
     categories = loadLocal('categories', [...DEFAULT_CATEGORIES]);
     settings = loadLocal('settings', { currency: '$' });
   }
@@ -1572,7 +1681,7 @@ function refreshCurrentPage(page) {
   else if (page === 'recurring') renderRecurringPage();
   else if (page === 'reports') renderReports();
   else if (page === 'settings') renderSettings();
-  else if (page === 'tasks') renderTasks();
+  else if (page === 'tasks') { if (activeSubTab === 'ideas') renderIdeas(); else renderTasks(); }
   else if (page === 'app-settings') renderAppSettings();
 }
 
@@ -1588,15 +1697,17 @@ document.addEventListener('keydown', e => {
   // Close modals on Escape
   if (e.key === 'Escape') {
     hideTaskContext();
+    hideIdeaContext();
     document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
     return;
   }
-  // Ctrl+N / Cmd+N to quick add transaction
+  // Ctrl+N / Cmd+N to quick add
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
     e.preventDefault();
-    // Don't open if another modal is active
     if (!document.querySelector('.modal-overlay.active')) {
-      openTransactionModal();
+      if (currentSection === 'tasks' && activeSubTab === 'ideas') openIdeaModal();
+      else if (currentSection === 'tasks') openTaskModal();
+      else openTransactionModal();
     }
   }
 });
@@ -2693,7 +2804,7 @@ function ctxDeleteTask() {
   hideTaskContext();
 }
 
-document.addEventListener('click', hideTaskContext);
+document.addEventListener('click', () => { hideTaskContext(); hideIdeaContext(); });
 
 // Inline editing
 function inlineEdit(id, field, td) {
@@ -2770,6 +2881,273 @@ function inlineEdit(id, field, td) {
     const commit = () => { t.description = inp.value.trim(); saveAll(); renderTasks(); };
     inp.addEventListener('blur', commit);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderTasks(); });
+  }
+}
+
+// ========== [IDEAS] ==========
+let ideaPage = 1;
+const IDEA_PAGE_SIZE = 25;
+let ideaSortField = 'priority';
+let ideaSortDir = 1;
+let ctxIdeaId = null;
+let activeSubTab = 'tasks';
+
+function switchSubTab(tab) {
+  activeSubTab = tab;
+  document.getElementById('subtab-tasks').classList.toggle('active', tab === 'tasks');
+  document.getElementById('subtab-ideas').classList.toggle('active', tab === 'ideas');
+  document.getElementById('tasks-content').style.display = tab === 'tasks' ? '' : 'none';
+  document.getElementById('ideas-content').style.display = tab === 'ideas' ? '' : 'none';
+  if (tab === 'tasks') renderTasks();
+  else renderIdeas();
+}
+
+function getFilteredIdeas() {
+  const search = document.getElementById('idea-filter-search').value.toLowerCase();
+  const priority = document.getElementById('idea-filter-priority').value;
+  const showCompleted = document.getElementById('idea-show-completed').checked;
+
+  return ideas.filter(i => {
+    if (search && !i.name.toLowerCase().includes(search) && !(i.description || '').toLowerCase().includes(search)) return false;
+    if (priority && i.priority !== priority) return false;
+    if (!showCompleted && i.completed) return false;
+    return true;
+  }).sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (ideaSortField === 'priority') return ideaSortDir * (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+    if (ideaSortField === 'dueDate') {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return ideaSortDir * a.dueDate.localeCompare(b.dueDate);
+    }
+    if (ideaSortField === 'name') return ideaSortDir * a.name.localeCompare(b.name);
+    if (ideaSortField === 'estTime') return ideaSortDir * ((a.estTime || 0) - (b.estTime || 0));
+    return 0;
+  });
+}
+
+function sortIdeas(field) {
+  if (ideaSortField === field) ideaSortDir *= -1;
+  else { ideaSortField = field; ideaSortDir = 1; }
+  ideaPage = 1;
+  renderIdeas();
+}
+
+function renderIdeas() {
+  ['name', 'estTime', 'dueDate', 'priority'].forEach(f => {
+    const el = document.getElementById('sort-idea-' + (f === 'estTime' ? 'time' : f === 'dueDate' ? 'due' : f === 'priority' ? 'priority' : 'name') + '-icon');
+    el.textContent = ideaSortField === f ? (ideaSortDir === 1 ? '\u25B2' : '\u25BC') : '';
+  });
+
+  const filtered = getFilteredIdeas();
+  const tbody = document.getElementById('ideas-body');
+  const today = new Date().toISOString().split('T')[0];
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:32px">No ideas found. Click "+ Add Idea" to create one.</td></tr>';
+    document.getElementById('ideas-summary').textContent = '';
+    document.getElementById('idea-pagination').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.ceil(filtered.length / IDEA_PAGE_SIZE);
+  if (ideaPage > totalPages) ideaPage = totalPages;
+  const start = (ideaPage - 1) * IDEA_PAGE_SIZE;
+  const paged = filtered.slice(start, start + IDEA_PAGE_SIZE);
+
+  tbody.innerHTML = paged.map(i => {
+    const isOverdue = i.dueDate && i.dueDate < today && !i.completed;
+    return `
+    <tr class="${i.completed ? 'task-completed' : ''}" oncontextmenu="showIdeaContext(event, '${i.id}')">
+      <td><label class="task-check-wrap"><input type="checkbox" ${i.completed ? 'checked' : ''} onchange="toggleIdeaComplete('${i.id}')"><span class="task-check-mark"></span></label></td>
+      <td class="task-editable" onclick="inlineEditIdea('${i.id}','name',this)">${esc(i.name)}</td>
+      <td class="task-editable" onclick="inlineEditIdea('${i.id}','estTime',this)">${i.estTime ? i.estTime + ' min' : '<span style="color:var(--text-dim)">\u2014</span>'}</td>
+      <td class="task-editable ${isOverdue ? 'task-overdue' : ''}" onclick="inlineEditIdea('${i.id}','dueDate',this)">${i.dueDate ? formatDateLong(i.dueDate) : '<span style="color:var(--text-dim)">\u2014</span>'}</td>
+      <td class="task-editable" onclick="inlineEditIdea('${i.id}','priority',this)"><span class="badge badge-${i.priority}">${PRIORITY_LABELS[i.priority]}</span></td>
+      <td class="task-editable" onclick="inlineEditIdea('${i.id}','description',this)" style="color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(i.description || '') || '<span style="color:var(--text-dim)">\u2014</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('idea-pagination').innerHTML = filtered.length > IDEA_PAGE_SIZE ? `
+    <div class="pagination-info">Showing ${start + 1}-${Math.min(start + IDEA_PAGE_SIZE, filtered.length)} of ${filtered.length}</div>
+    <div class="pagination-controls">
+      <button onclick="ideaPage=1; renderIdeas()" ${ideaPage === 1 ? 'disabled' : ''}>First</button>
+      <button onclick="ideaPage--; renderIdeas()" ${ideaPage === 1 ? 'disabled' : ''}>&larr; Prev</button>
+      <span class="page-num">Page ${ideaPage} of ${totalPages}</span>
+      <button onclick="ideaPage++; renderIdeas()" ${ideaPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+      <button onclick="ideaPage=${totalPages}; renderIdeas()" ${ideaPage === totalPages ? 'disabled' : ''}>Last</button>
+    </div>
+  ` : '';
+
+  const incomplete = ideas.filter(i => !i.completed).length;
+  const total = ideas.length;
+  document.getElementById('ideas-summary').textContent = `${incomplete} incomplete of ${total} total idea${total !== 1 ? 's' : ''}`;
+}
+
+function openIdeaModal(id) {
+  if (id) {
+    const i = ideas.find(i => i.id === id);
+    if (!i) return;
+    document.getElementById('modal-idea-title').textContent = 'Edit Idea';
+    document.getElementById('idea-edit-id').value = id;
+    document.getElementById('idea-name').value = i.name;
+    document.getElementById('idea-est-time').value = i.estTime || '';
+    document.getElementById('idea-due-date').value = i.dueDate || '';
+    document.getElementById('idea-priority').value = i.priority;
+    document.getElementById('idea-description').value = i.description || '';
+  } else {
+    document.getElementById('modal-idea-title').textContent = 'Add Idea';
+    document.getElementById('idea-edit-id').value = '';
+    document.getElementById('idea-name').value = '';
+    document.getElementById('idea-est-time').value = '';
+    document.getElementById('idea-due-date').value = '';
+    document.getElementById('idea-priority').value = 'medium';
+    document.getElementById('idea-description').value = '';
+  }
+  document.getElementById('modal-idea').classList.add('active');
+  setTimeout(() => document.getElementById('idea-name').focus(), 50);
+}
+
+function saveIdea() {
+  const name = document.getElementById('idea-name').value.trim();
+  if (!name) { toast('Please enter an idea name', 'error'); return; }
+
+  const idea = {
+    id: document.getElementById('idea-edit-id').value || uid(),
+    name: name,
+    estTime: parseInt(document.getElementById('idea-est-time').value) || null,
+    dueDate: document.getElementById('idea-due-date').value || null,
+    priority: document.getElementById('idea-priority').value,
+    description: document.getElementById('idea-description').value.trim(),
+    completed: false
+  };
+
+  const idx = ideas.findIndex(i => i.id === idea.id);
+  if (idx >= 0) { idea.completed = ideas[idx].completed; ideas[idx] = idea; }
+  else ideas.push(idea);
+
+  saveAll();
+  closeModal('modal-idea');
+  toast(idx >= 0 ? 'Idea updated' : 'Idea added');
+  renderIdeas();
+}
+
+function deleteIdea(id) {
+  confirmAction('Delete Idea', 'Are you sure you want to delete this idea?', () => {
+    ideas = ideas.filter(i => i.id !== id);
+    saveAll();
+    toast('Idea deleted');
+    renderIdeas();
+  });
+}
+
+function toggleIdeaComplete(id) {
+  const i = ideas.find(i => i.id === id);
+  if (i) {
+    i.completed = !i.completed;
+    saveAll();
+    renderIdeas();
+  }
+}
+
+function showIdeaContext(e, id) {
+  e.preventDefault();
+  ctxIdeaId = id;
+  const menu = document.getElementById('idea-context-menu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('active');
+}
+
+function hideIdeaContext() {
+  document.getElementById('idea-context-menu').classList.remove('active');
+  ctxIdeaId = null;
+}
+
+function ctxEditIdea() {
+  if (ctxIdeaId) openIdeaModal(ctxIdeaId);
+  hideIdeaContext();
+}
+
+function ctxDeleteIdea() {
+  if (ctxIdeaId) deleteIdea(ctxIdeaId);
+  hideIdeaContext();
+}
+
+function inlineEditIdea(id, field, td) {
+  if (td.querySelector('input, select')) return;
+  const i = ideas.find(i => i.id === id);
+  if (!i) return;
+
+  if (field === 'priority') {
+    const sel = document.createElement('select');
+    sel.className = 'task-inline-select';
+    ['most-important', 'high', 'medium', 'low'].forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = PRIORITY_LABELS[p];
+      if (p === i.priority) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    td.innerHTML = '';
+    td.appendChild(sel);
+    sel.focus();
+    sel.addEventListener('change', () => { i.priority = sel.value; saveAll(); renderIdeas(); });
+    sel.addEventListener('blur', () => renderIdeas());
+  } else if (field === 'dueDate') {
+    const inp = document.createElement('input');
+    inp.type = 'date';
+    inp.className = 'task-inline-input';
+    inp.value = i.dueDate || '';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    const commit = () => { i.dueDate = inp.value || null; saveAll(); renderIdeas(); };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderIdeas(); });
+  } else if (field === 'estTime') {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.className = 'task-inline-input';
+    inp.value = i.estTime || '';
+    inp.placeholder = 'min';
+    inp.min = '0';
+    inp.style.width = '70px';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { i.estTime = parseInt(inp.value) || null; saveAll(); renderIdeas(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderIdeas(); });
+  } else if (field === 'name') {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'task-inline-input';
+    inp.value = i.name;
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { const v = inp.value.trim(); if (v) { i.name = v; saveAll(); } renderIdeas(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderIdeas(); });
+  } else if (field === 'description') {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'task-inline-input';
+    inp.value = i.description || '';
+    inp.placeholder = 'Description...';
+    td.innerHTML = '';
+    td.style.overflow = 'visible';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { i.description = inp.value.trim(); saveAll(); renderIdeas(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderIdeas(); });
   }
 }
 
