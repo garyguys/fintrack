@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Budget & Expense Tracker</title>
+<title>PFlux</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root {
@@ -246,6 +246,33 @@ tr:hover td { background: var(--surface2); }
 
 /* Tasks */
 .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 8px 14px; }
+
+.nav-section {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  user-select: none;
+}
+.nav-section:hover { background: var(--surface2); }
+.nav-section.active { background: var(--accent); color: #fff; }
+.nav-section svg { width: 20px; height: 20px; flex-shrink: 0; }
+.nav-section .nav-chevron { margin-left: auto; font-size: 0.7rem; transition: transform 0.2s; }
+.nav-section.expanded .nav-chevron { transform: rotate(90deg); }
+
+.nav-subitems {
+  display: none;
+  padding-left: 12px;
+  margin-top: 2px;
+}
+.nav-subitems.show { display: block; }
+.nav-subitems .nav-item { font-size: 0.82rem; padding: 8px 14px; }
 
 .task-completed td { opacity: 0.45; }
 .task-completed .task-name { text-decoration: line-through; }
@@ -608,44 +635,52 @@ kbd {
 <div class="app">
   <!-- Sidebar -->
   <nav class="sidebar">
-    <div class="logo">FinTrack</div>
-    <div class="logo-sub">Personal Finance Manager</div>
+    <div class="logo">PFlux</div>
+    <div class="logo-sub">Personal Command Center</div>
 
-    <button class="nav-item active" data-page="dashboard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Dashboard
-    </button>
-    <button class="nav-item" data-page="transactions">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-      Transactions
-    </button>
-    <button class="nav-item" data-page="budgets">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
-      Budgets
-    </button>
-    <button class="nav-item" data-page="goals">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      Savings Goals
-    </button>
-    <button class="nav-item" data-page="recurring">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-      Recurring
-    </button>
-    <button class="nav-item" data-page="reports">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-      Reports
-    </button>
-    <button class="nav-item" data-page="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      Settings
-    </button>
-
-    <hr class="sidebar-divider">
-    <button class="nav-item" data-page="tasks">
+    <!-- Tasks (top-level) -->
+    <div class="nav-section" id="nav-tasks" onclick="selectSection('tasks')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Tasks
       <span class="task-count-badge" id="task-count-badge" style="display:none"></span>
-    </button>
+    </div>
+
+    <!-- Finances (collapsible section) -->
+    <div class="nav-section" id="nav-finances" onclick="selectSection('finances')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Finances
+      <span class="nav-chevron">&#9654;</span>
+    </div>
+    <div class="nav-subitems" id="finance-subitems">
+      <button class="nav-item" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-page="transactions">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Transactions
+      </button>
+      <button class="nav-item" data-page="budgets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
+        Budgets
+      </button>
+      <button class="nav-item" data-page="goals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Savings Goals
+      </button>
+      <button class="nav-item" data-page="recurring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        Recurring
+      </button>
+      <button class="nav-item" data-page="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Reports
+      </button>
+      <button class="nav-item" data-page="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Settings
+      </button>
+    </div>
 
     <div style="flex:1"></div>
     <div style="font-size:0.75rem; color:var(--text-dim); padding: 8px 14px;">
@@ -659,7 +694,7 @@ kbd {
   <div class="main">
 
     <!-- ===== DASHBOARD ===== -->
-    <div class="page active" id="page-dashboard">
+    <div class="page" id="page-dashboard">
       <h1 style="margin-bottom:4px">Dashboard</h1>
 
       <!-- [#2] Month navigation -->
@@ -897,7 +932,7 @@ kbd {
     </div>
 
     <!-- ===== TASKS ===== -->
-    <div class="page" id="page-tasks">
+    <div class="page active" id="page-tasks">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px">
         <h1>Tasks</h1>
         <button class="btn btn-primary" onclick="openTaskModal()">+ Add Task</button>
@@ -1360,18 +1395,40 @@ let txPage = 1;
 const TX_PAGE_SIZE = 25;
 
 // ========== NAVIGATION ==========
-let currentPage = 'dashboard';
+let currentPage = 'tasks';
+let currentSection = 'tasks';
+let lastFinancePage = 'dashboard';
+
+const FINANCE_PAGES = ['dashboard', 'transactions', 'budgets', 'goals', 'recurring', 'reports', 'settings'];
+
+function selectSection(section) {
+  currentSection = section;
+  document.querySelectorAll('.nav-section').forEach(s => s.classList.remove('active', 'expanded'));
+
+  if (section === 'tasks') {
+    document.getElementById('nav-tasks').classList.add('active');
+    document.getElementById('finance-subitems').classList.remove('show');
+    navigateTo('tasks');
+  } else if (section === 'finances') {
+    document.getElementById('nav-finances').classList.add('active', 'expanded');
+    document.getElementById('finance-subitems').classList.add('show');
+    navigateTo(lastFinancePage);
+  }
+}
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
-    navigateTo(btn.dataset.page);
+    const page = btn.dataset.page;
+    if (FINANCE_PAGES.includes(page)) lastFinancePage = page;
+    navigateTo(page);
   });
 });
 
 function navigateTo(page) {
   currentPage = page;
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  const navBtn = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (navBtn) navBtn.classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   document.querySelector('.sidebar').classList.remove('open');
@@ -2591,7 +2648,7 @@ function esc(str) {
   }
   processRecurring();
   updateTaskBadge();
-  renderDashboard();
+  selectSection('tasks');
 })();
 </script>
 </body>
