@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('fileStorage', {
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update-status', (event, data) => callback(data));
-  }
+  },
+  restartForUpdate: () => ipcRenderer.send('restart-for-update')
 });

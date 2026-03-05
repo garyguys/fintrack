@@ -118,6 +118,10 @@ autoUpdater.on('error', (err) => {
   sendUpdateStatus('error', err.message);
 });
 
+ipcMain.on('restart-for-update', () => {
+  autoUpdater.quitAndInstall();
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

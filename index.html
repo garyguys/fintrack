@@ -289,25 +289,27 @@ tr:hover td { background: var(--surface2); }
 
 .task-checkbox {
   appearance: none; -webkit-appearance: none;
-  width: 15px; height: 15px;
+  width: 18px; height: 18px;
   border: 2px solid var(--text-dim);
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   position: relative;
   background: transparent;
   flex-shrink: 0;
+  vertical-align: middle;
 }
 .task-checkbox:checked {
   background: var(--accent);
   border-color: var(--accent);
 }
 .task-checkbox:checked::after {
-  content: '\2713';
+  content: '';
   position: absolute;
-  top: -2px; left: 1px;
-  font-size: 12px;
-  color: #fff;
-  font-weight: bold;
+  left: 5px; top: 1px;
+  width: 5px; height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .task-editable { cursor: pointer; position: relative; }
@@ -1304,7 +1306,10 @@ kbd {
       <div class="update-progress-bar" id="update-progress-bar"></div>
     </div>
     <div class="update-percent" id="update-percent"></div>
-    <button class="btn btn-secondary" id="update-skip-btn" style="margin-top:18px;" onclick="document.getElementById('update-overlay').classList.remove('active')">Skip for now</button>
+    <div style="margin-top:18px; display:flex; gap:10px; justify-content:center;">
+      <button class="btn btn-primary" id="update-restart-btn" style="display:none;" onclick="window.fileStorage.restartForUpdate()">Restart Now</button>
+      <button class="btn btn-secondary" id="update-skip-btn" onclick="document.getElementById('update-overlay').classList.remove('active')">Skip for now</button>
+    </div>
   </div>
 </div>
 
@@ -2928,9 +2933,11 @@ function esc(str) {
       } else if (status === 'ready') {
         box.classList.add('update-ready');
         version.textContent = 'Version ' + info;
-        statusText.textContent = 'Update downloaded — restart the app to apply';
+        statusText.textContent = 'Update downloaded — restart to apply';
         bar.style.width = '100%';
         percent.textContent = 'Complete';
+        document.getElementById('update-restart-btn').style.display = '';
+        overlay.classList.add('active');
       }
     });
   }
