@@ -297,6 +297,50 @@ tr:hover td { background: var(--surface2); }
 
 .filter-bar .form-group { min-width: 150px; }
 
+/* Update overlay */
+.update-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+.update-overlay.active { display: flex; }
+.update-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  width: 460px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: modalIn 0.15s ease;
+}
+.update-box h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.update-box .update-version { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 24px; }
+.update-box .update-status { margin-bottom: 16px; font-size: 0.9rem; }
+.update-progress-track {
+  width: 100%;
+  height: 12px;
+  background: var(--surface2);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.update-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--blue));
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+.update-percent { font-size: 0.85rem; color: var(--text-dim); }
+.update-ready .update-progress-bar { width: 100%; background: linear-gradient(90deg, var(--green), #10b981); }
+.update-ready .update-status { color: var(--green); }
+
 /* Modal */
 .modal-overlay {
   display: none;
@@ -542,7 +586,6 @@ kbd {
     </button>
 
     <div style="flex:1"></div>
-    <div id="update-banner" style="display:none; padding:8px 14px; margin-bottom:8px; font-size:0.8rem; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; color:var(--green)"></div>
     <div style="font-size:0.75rem; color:var(--text-dim); padding: 8px 14px;">
       <span id="storage-mode">Data stored locally</span><br>
       <span id="app-version"></span>
@@ -948,6 +991,19 @@ kbd {
 </div>
 
 <!-- Toast -->
+<!-- Update Overlay -->
+<div class="update-overlay" id="update-overlay">
+  <div class="update-box">
+    <h2>Updating FinTrack</h2>
+    <div class="update-version" id="update-version"></div>
+    <div class="update-status" id="update-status-text">Checking for updates...</div>
+    <div class="update-progress-track">
+      <div class="update-progress-bar" id="update-progress-bar"></div>
+    </div>
+    <div class="update-percent" id="update-percent"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2143,24 +2199,30 @@ function esc(str) {
     document.getElementById('app-version').textContent = 'v' + ver + ' \u00B7 ';
     // Listen for auto-update status
     window.fileStorage.onUpdateStatus(({ status, info }) => {
-      const banner = document.getElementById('update-banner');
+      const overlay = document.getElementById('update-overlay');
+      const box = overlay.querySelector('.update-box');
+      const version = document.getElementById('update-version');
+      const statusText = document.getElementById('update-status-text');
+      const bar = document.getElementById('update-progress-bar');
+      const percent = document.getElementById('update-percent');
       if (status === 'available') {
-        banner.style.display = '';
-        banner.textContent = 'Downloading update v' + info + '...';
-        banner.style.color = 'var(--blue)';
-        banner.style.borderColor = 'rgba(59,130,246,0.3)';
-        banner.style.background = 'rgba(59,130,246,0.1)';
+        overlay.classList.add('active');
+        box.classList.remove('update-ready');
+        version.textContent = 'Version ' + info + ' is available';
+        statusText.textContent = 'Starting download...';
+        bar.style.width = '0%';
+        percent.textContent = '';
       } else if (status === 'downloading') {
-        banner.style.display = '';
-        banner.textContent = 'Downloading update... ' + info + '%';
+        overlay.classList.add('active');
+        statusText.textContent = 'Downloading update...';
+        bar.style.width = info + '%';
+        percent.textContent = info + '%';
       } else if (status === 'ready') {
-        banner.style.display = '';
-        banner.textContent = 'Update v' + info + ' ready \u2014 restart to apply';
-        banner.style.color = 'var(--green)';
-        banner.style.borderColor = 'rgba(34,197,94,0.3)';
-        banner.style.background = 'rgba(34,197,94,0.1)';
-        banner.style.cursor = 'pointer';
-        banner.title = 'Click to learn more';
+        box.classList.add('update-ready');
+        version.textContent = 'Version ' + info;
+        statusText.textContent = 'Update downloaded — restart the app to apply';
+        bar.style.width = '100%';
+        percent.textContent = 'Complete';
       }
     });
   }
