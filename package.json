@@ -1,6 +1,6 @@
 {
   "name": "fintrack",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Personal Command Center",
   "main": "main.js",
   "scripts": {
@@ -24,6 +24,7 @@
       "preload.js",
       "index.html"
     ],
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "win": {
       "target": [
         {
