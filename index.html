@@ -238,6 +238,61 @@ tr:hover td { background: var(--surface2); }
 .badge-expense { background: rgba(239,68,68,0.15); color: var(--red); }
 .badge-income { background: rgba(34,197,94,0.15); color: var(--green); }
 
+/* Priority badges */
+.badge-most-important { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-high { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-medium { background: rgba(245,158,11,0.15); color: var(--orange); }
+.badge-low { background: rgba(107,114,128,0.15); color: #9ca3af; }
+
+/* Tasks */
+.sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 8px 14px; }
+
+.task-completed td { opacity: 0.45; }
+.task-completed .task-name { text-decoration: line-through; }
+.task-overdue { color: var(--red) !important; }
+
+.task-checkbox {
+  width: 18px; height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.task-name-cell { cursor: pointer; }
+.task-name-cell:hover { color: var(--accent); }
+
+.context-menu {
+  display: none;
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 250;
+  min-width: 140px;
+  padding: 4px 0;
+}
+.context-menu.active { display: block; }
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.context-menu-item:hover { background: var(--surface2); }
+.context-menu-item.danger { color: var(--red); }
+
+.task-count-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
 /* Budget bars */
 .budget-item { margin-bottom: 16px; }
 
@@ -585,6 +640,13 @@ kbd {
       Settings
     </button>
 
+    <hr class="sidebar-divider">
+    <button class="nav-item" data-page="tasks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Tasks
+      <span class="task-count-badge" id="task-count-badge" style="display:none"></span>
+    </button>
+
     <div style="flex:1"></div>
     <div style="font-size:0.75rem; color:var(--text-dim); padding: 8px 14px;">
       <span id="storage-mode">Data stored locally</span><br>
@@ -834,6 +896,101 @@ kbd {
       </div>
     </div>
 
+    <!-- ===== TASKS ===== -->
+    <div class="page" id="page-tasks">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px">
+        <h1>Tasks</h1>
+        <button class="btn btn-primary" onclick="openTaskModal()">+ Add Task</button>
+      </div>
+
+      <div class="filter-bar">
+        <div class="form-group">
+          <label>Search</label>
+          <input type="text" id="task-filter-search" placeholder="Task name..." oninput="taskPage=1; renderTasks()">
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="task-filter-priority" onchange="taskPage=1; renderTasks()">
+            <option value="">All</option>
+            <option value="most-important">Most Important</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-group" style="justify-content:flex-end">
+          <label>&nbsp;</label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; text-transform:none; letter-spacing:0">
+            <input type="checkbox" id="task-show-completed" onchange="taskPage=1; renderTasks()" checked style="width:16px;height:16px;accent-color:var(--accent)">
+            Show completed
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:40px"></th>
+              <th style="cursor:pointer" onclick="sortTasks('name')">Task Name <span id="sort-task-name-icon"></span></th>
+              <th style="cursor:pointer" onclick="sortTasks('estTime')">Est. Time <span id="sort-task-time-icon"></span></th>
+              <th style="cursor:pointer" onclick="sortTasks('dueDate')">Due Date <span id="sort-task-due-icon"></span></th>
+              <th style="cursor:pointer" onclick="sortTasks('priority')">Priority <span id="sort-task-priority-icon"></span></th>
+              <th>Description</th>
+            </tr></thead>
+            <tbody id="tasks-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="task-pagination"></div>
+        <div id="tasks-summary" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim)"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="task-context-menu">
+  <div class="context-menu-item" id="ctx-edit" onclick="ctxEditTask()">Edit</div>
+  <div class="context-menu-item danger" id="ctx-delete" onclick="ctxDeleteTask()">Delete</div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <div class="modal-title" id="modal-task-title">Add Task</div>
+    <input type="hidden" id="task-edit-id">
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Task Name</label>
+      <input type="text" id="task-name" placeholder="e.g. Email SBC">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Est. Time (minutes)</label>
+        <input type="number" id="task-est-time" min="0" placeholder="60">
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="task-due-date">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Priority</label>
+      <select id="task-priority">
+        <option value="most-important">Most Important</option>
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Description (optional)</label>
+      <textarea id="task-description" placeholder="Details..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveTask()">Save</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-task')">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -1043,6 +1200,7 @@ let transactions = [];
 let budgets = {};
 let goals = [];
 let recurring = [];
+let todos = [];
 let categories = [...DEFAULT_CATEGORIES];
 let settings = { currency: '$' };
 
@@ -1054,6 +1212,7 @@ function saveAll() {
   saveLocal('budgets', budgets);
   saveLocal('goals', goals);
   saveLocal('recurring', recurring);
+  saveLocal('todos', todos);
   saveLocal('categories', categories);
   saveLocal('settings', settings);
 
@@ -1061,7 +1220,7 @@ function saveAll() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       window.fileStorage.saveData({
-        transactions, budgets, goals, recurring, categories, settings
+        transactions, budgets, goals, recurring, todos, categories, settings
       });
     }, 300);
   }
@@ -1080,6 +1239,7 @@ async function loadAllData() {
     budgets = data.budgets || {};
     goals = data.goals || [];
     recurring = data.recurring || [];
+    todos = data.todos || [];
     categories = data.categories || [...DEFAULT_CATEGORIES];
     settings = data.settings || { currency: '$' };
   } else {
@@ -1088,6 +1248,7 @@ async function loadAllData() {
     budgets = loadLocal('budgets', {});
     goals = loadLocal('goals', []);
     recurring = loadLocal('recurring', []);
+    todos = loadLocal('todos', []);
     categories = loadLocal('categories', [...DEFAULT_CATEGORIES]);
     settings = loadLocal('settings', { currency: '$' });
   }
@@ -1226,6 +1387,7 @@ function refreshCurrentPage(page) {
   else if (page === 'recurring') renderRecurringPage();
   else if (page === 'reports') renderReports();
   else if (page === 'settings') renderSettings();
+  else if (page === 'tasks') renderTasks();
 }
 
 // ========== MODALS ==========
@@ -1239,6 +1401,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 document.addEventListener('keydown', e => {
   // Close modals on Escape
   if (e.key === 'Escape') {
+    hideTaskContext();
     document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
     return;
   }
@@ -2052,6 +2215,206 @@ function removeCategory(idx) {
   }, 'Yes, Remove');
 }
 
+// ========== [TASKS] ==========
+const PRIORITY_ORDER = { 'most-important': 0, 'high': 1, 'medium': 2, 'low': 3 };
+const PRIORITY_LABELS = { 'most-important': 'Most Important', 'high': 'High', 'medium': 'Medium', 'low': 'Low' };
+let taskPage = 1;
+const TASK_PAGE_SIZE = 25;
+let taskSortField = 'priority';
+let taskSortDir = 1;
+let ctxTaskId = null;
+
+function getFilteredTasks() {
+  const search = document.getElementById('task-filter-search').value.toLowerCase();
+  const priority = document.getElementById('task-filter-priority').value;
+  const showCompleted = document.getElementById('task-show-completed').checked;
+
+  return todos.filter(t => {
+    if (search && !t.name.toLowerCase().includes(search) && !(t.description || '').toLowerCase().includes(search)) return false;
+    if (priority && t.priority !== priority) return false;
+    if (!showCompleted && t.completed) return false;
+    return true;
+  }).sort((a, b) => {
+    // Completed tasks always go to the bottom
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (taskSortField === 'priority') return taskSortDir * (PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+    if (taskSortField === 'dueDate') {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return taskSortDir * a.dueDate.localeCompare(b.dueDate);
+    }
+    if (taskSortField === 'name') return taskSortDir * a.name.localeCompare(b.name);
+    if (taskSortField === 'estTime') return taskSortDir * ((a.estTime || 0) - (b.estTime || 0));
+    return 0;
+  });
+}
+
+function sortTasks(field) {
+  if (taskSortField === field) taskSortDir *= -1;
+  else { taskSortField = field; taskSortDir = 1; }
+  taskPage = 1;
+  renderTasks();
+}
+
+function renderTasks() {
+  // Sort icons
+  ['name', 'estTime', 'dueDate', 'priority'].forEach(f => {
+    const el = document.getElementById('sort-task-' + (f === 'estTime' ? 'time' : f === 'dueDate' ? 'due' : f === 'priority' ? 'priority' : 'name') + '-icon');
+    el.textContent = taskSortField === f ? (taskSortDir === 1 ? '▲' : '▼') : '';
+  });
+
+  const filtered = getFilteredTasks();
+  const tbody = document.getElementById('tasks-body');
+  const today = new Date().toISOString().split('T')[0];
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:32px">No tasks found. Click "+ Add Task" to create one.</td></tr>';
+    document.getElementById('tasks-summary').textContent = '';
+    document.getElementById('task-pagination').innerHTML = '';
+    updateTaskBadge();
+    return;
+  }
+
+  const totalPages = Math.ceil(filtered.length / TASK_PAGE_SIZE);
+  if (taskPage > totalPages) taskPage = totalPages;
+  const start = (taskPage - 1) * TASK_PAGE_SIZE;
+  const paged = filtered.slice(start, start + TASK_PAGE_SIZE);
+
+  tbody.innerHTML = paged.map(t => {
+    const isOverdue = t.dueDate && t.dueDate < today && !t.completed;
+    return `
+    <tr class="${t.completed ? 'task-completed' : ''}" oncontextmenu="showTaskContext(event, '${t.id}')">
+      <td><input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')"></td>
+      <td class="task-name task-name-cell" onclick="openTaskModal('${t.id}')">${esc(t.name)}</td>
+      <td>${t.estTime ? t.estTime + ' min' : '<span style="color:var(--text-dim)">—</span>'}</td>
+      <td class="${isOverdue ? 'task-overdue' : ''}">${t.dueDate ? formatDate(t.dueDate) : '<span style="color:var(--text-dim)">—</span>'}</td>
+      <td><span class="badge badge-${t.priority}">${PRIORITY_LABELS[t.priority]}</span></td>
+      <td style="color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(t.description || '')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('task-pagination').innerHTML = filtered.length > TASK_PAGE_SIZE ? `
+    <div class="pagination-info">Showing ${start + 1}-${Math.min(start + TASK_PAGE_SIZE, filtered.length)} of ${filtered.length}</div>
+    <div class="pagination-controls">
+      <button onclick="taskPage=1; renderTasks()" ${taskPage === 1 ? 'disabled' : ''}>First</button>
+      <button onclick="taskPage--; renderTasks()" ${taskPage === 1 ? 'disabled' : ''}>&larr; Prev</button>
+      <span class="page-num">Page ${taskPage} of ${totalPages}</span>
+      <button onclick="taskPage++; renderTasks()" ${taskPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+      <button onclick="taskPage=${totalPages}; renderTasks()" ${taskPage === totalPages ? 'disabled' : ''}>Last</button>
+    </div>
+  ` : '';
+
+  const incomplete = todos.filter(t => !t.completed).length;
+  const total = todos.length;
+  document.getElementById('tasks-summary').textContent = `${incomplete} incomplete of ${total} total task${total !== 1 ? 's' : ''}`;
+  updateTaskBadge();
+}
+
+function updateTaskBadge() {
+  const badge = document.getElementById('task-count-badge');
+  const count = todos.filter(t => !t.completed).length;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function openTaskModal(id) {
+  if (id) {
+    const t = todos.find(t => t.id === id);
+    if (!t) return;
+    document.getElementById('modal-task-title').textContent = 'Edit Task';
+    document.getElementById('task-edit-id').value = id;
+    document.getElementById('task-name').value = t.name;
+    document.getElementById('task-est-time').value = t.estTime || '';
+    document.getElementById('task-due-date').value = t.dueDate || '';
+    document.getElementById('task-priority').value = t.priority;
+    document.getElementById('task-description').value = t.description || '';
+  } else {
+    document.getElementById('modal-task-title').textContent = 'Add Task';
+    document.getElementById('task-edit-id').value = '';
+    document.getElementById('task-name').value = '';
+    document.getElementById('task-est-time').value = '';
+    document.getElementById('task-due-date').value = '';
+    document.getElementById('task-priority').value = 'medium';
+    document.getElementById('task-description').value = '';
+  }
+  document.getElementById('modal-task').classList.add('active');
+  setTimeout(() => document.getElementById('task-name').focus(), 50);
+}
+
+function saveTask() {
+  const name = document.getElementById('task-name').value.trim();
+  if (!name) { toast('Please enter a task name', 'error'); return; }
+
+  const task = {
+    id: document.getElementById('task-edit-id').value || uid(),
+    name: name,
+    estTime: parseInt(document.getElementById('task-est-time').value) || null,
+    dueDate: document.getElementById('task-due-date').value || null,
+    priority: document.getElementById('task-priority').value,
+    description: document.getElementById('task-description').value.trim(),
+    completed: false
+  };
+
+  const idx = todos.findIndex(t => t.id === task.id);
+  if (idx >= 0) { task.completed = todos[idx].completed; todos[idx] = task; }
+  else todos.push(task);
+
+  saveAll();
+  closeModal('modal-task');
+  toast(idx >= 0 ? 'Task updated' : 'Task added');
+  renderTasks();
+}
+
+function deleteTask(id) {
+  confirmAction('Delete Task', 'Are you sure you want to delete this task?', () => {
+    todos = todos.filter(t => t.id !== id);
+    saveAll();
+    toast('Task deleted');
+    renderTasks();
+  });
+}
+
+function toggleTaskComplete(id) {
+  const t = todos.find(t => t.id === id);
+  if (t) {
+    t.completed = !t.completed;
+    saveAll();
+    renderTasks();
+  }
+}
+
+// Context menu
+function showTaskContext(e, id) {
+  e.preventDefault();
+  ctxTaskId = id;
+  const menu = document.getElementById('task-context-menu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('active');
+}
+
+function hideTaskContext() {
+  document.getElementById('task-context-menu').classList.remove('active');
+  ctxTaskId = null;
+}
+
+function ctxEditTask() {
+  if (ctxTaskId) openTaskModal(ctxTaskId);
+  hideTaskContext();
+}
+
+function ctxDeleteTask() {
+  if (ctxTaskId) deleteTask(ctxTaskId);
+  hideTaskContext();
+}
+
+document.addEventListener('click', hideTaskContext);
+
 // ========== CSV IMPORT/EXPORT ==========
 function exportCSV() {
   const header = 'Date,Type,Amount,Description,Category,Notes';
@@ -2159,7 +2522,7 @@ function importAllData(event) {
 }
 
 function clearAllData() {
-  transactions = []; budgets = {}; goals = []; recurring = [];
+  transactions = []; budgets = {}; goals = []; recurring = []; todos = [];
   categories = [...DEFAULT_CATEGORIES];
   settings = { currency: '$' };
   saveAll();
@@ -2227,6 +2590,7 @@ function esc(str) {
     });
   }
   processRecurring();
+  updateTaskBadge();
   renderDashboard();
 })();
 </script>
