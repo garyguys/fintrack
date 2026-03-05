@@ -287,25 +287,31 @@ tr:hover td { background: var(--surface2); }
 .task-completed td { opacity: 0.45; text-decoration: line-through; }
 .task-overdue { color: var(--red) !important; }
 
-.task-checkbox {
-  appearance: none; -webkit-appearance: none;
+.task-check-wrap {
+  display: inline-block;
+  width: 18px; height: 18px;
+  position: relative;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.task-check-wrap input { display: none; }
+.task-check-mark {
+  display: block;
   width: 18px; height: 18px;
   border: 2px solid var(--text-dim);
   border-radius: 5px;
-  cursor: pointer;
-  position: relative;
   background: transparent;
-  flex-shrink: 0;
-  vertical-align: middle;
+  box-sizing: border-box;
 }
-.task-checkbox:checked {
+.task-check-wrap input:checked + .task-check-mark {
   background: var(--accent);
   border-color: var(--accent);
 }
-.task-checkbox:checked::after {
+.task-check-wrap input:checked + .task-check-mark::after {
   content: '';
+  display: block;
   position: absolute;
-  left: 5px; top: 1px;
+  left: 6px; top: 2px;
   width: 5px; height: 10px;
   border: solid #fff;
   border-width: 0 2px 2px 0;
@@ -2568,7 +2574,7 @@ function renderTasks() {
     const isOverdue = t.dueDate && t.dueDate < today && !t.completed;
     return `
     <tr class="${t.completed ? 'task-completed' : ''}" oncontextmenu="showTaskContext(event, '${t.id}')">
-      <td><input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')"></td>
+      <td><label class="task-check-wrap"><input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')"><span class="task-check-mark"></span></label></td>
       <td class="task-name task-editable" onclick="inlineEdit('${t.id}','name',this)">${esc(t.name)}</td>
       <td class="task-editable" onclick="inlineEdit('${t.id}','estTime',this)">${t.estTime ? t.estTime + ' min' : '<span style="color:var(--text-dim)">—</span>'}</td>
       <td class="task-editable ${isOverdue ? 'task-overdue' : ''}" onclick="inlineEdit('${t.id}','dueDate',this)">${t.dueDate ? formatDateLong(t.dueDate) : '<span style="color:var(--text-dim)">—</span>'}</td>
