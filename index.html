@@ -608,6 +608,7 @@ kbd {
             Import CSV
             <input type="file" accept=".csv" onchange="importCSV(event)" style="display:none">
           </label>
+          <button class="btn btn-danger" onclick="deleteCSVImports()">Delete CSV Imports</button>
         </div>
       </div>
 
@@ -2038,6 +2039,18 @@ function importCSV(event) {
   };
   reader.readAsText(file);
   event.target.value = '';
+}
+
+function deleteCSVImports() {
+  const count = transactions.filter(t => (t.notes || '').includes('CSV Import')).length;
+  if (count === 0) { toast('No CSV-imported transactions found', 'error'); return; }
+  confirmAction('Delete CSV Imports', `This will delete ${count} CSV-imported transaction${count !== 1 ? 's' : ''}. This cannot be undone.`, () => {
+    transactions = transactions.filter(t => !(t.notes || '').includes('CSV Import'));
+    saveAll();
+    toast(`Deleted ${count} CSV-imported transaction${count !== 1 ? 's' : ''}`);
+    renderTransactions();
+    renderDashboard();
+  });
 }
 
 function parseCSVLine(line) {
