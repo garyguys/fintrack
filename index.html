@@ -882,7 +882,7 @@ kbd {
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th style="width:40px"><input type="checkbox" id="tx-select-all" onchange="toggleSelectAllTx(this.checked)" style="width:16px;height:16px;accent-color:var(--accent)"></th>
+              <th style="width:30px"><label class="task-check-wrap"><input type="checkbox" id="tx-select-all" onchange="toggleSelectAllTx(this.checked)"><span class="task-check-mark"></span></label></th>
               <th style="cursor:pointer" onclick="sortTransactions('date')">Date <span id="sort-date-icon"></span></th>
               <th>Description</th>
               <th>Category</th>
@@ -1053,7 +1053,7 @@ kbd {
         <div class="form-group" style="justify-content:flex-end">
           <label>&nbsp;</label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; text-transform:none; letter-spacing:0">
-            <input type="checkbox" id="task-show-completed" onchange="taskPage=1; renderTasks()" checked style="width:16px;height:16px;accent-color:var(--accent)">
+            <span class="task-check-wrap" style="display:inline-block"><input type="checkbox" id="task-show-completed" onchange="taskPage=1; renderTasks()" checked><span class="task-check-mark"></span></span>
             Show completed
           </label>
         </div>
@@ -1808,7 +1808,7 @@ function renderTransactions() {
 
   tbody.innerHTML = paged.map(t => `
     <tr>
-      <td><input type="checkbox" class="tx-select" data-id="${t.id}" onchange="updateTxBulkBar()" ${selectedTxIds.has(t.id) ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent)"></td>
+      <td><label class="task-check-wrap"><input type="checkbox" class="tx-select" data-id="${t.id}" onchange="updateTxBulkBar()" ${selectedTxIds.has(t.id) ? 'checked' : ''}><span class="task-check-mark"></span></label></td>
       <td>${formatDate(t.date)}</td>
       <td>${esc(t.description)}${t.recurringId ? '<span class="recurring-icon" title="Recurring">&#x21bb;</span>' : ''}</td>
       <td><span style="color:${getColor(t.category)}">${esc(t.category)}</span></td>
