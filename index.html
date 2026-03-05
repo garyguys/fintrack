@@ -960,18 +960,15 @@ const DEFAULT_CATEGORIES = [
   { name: 'Healthcare', type: 'expense' },
   { name: 'Shopping', type: 'expense' },
   { name: 'Paycheque', type: 'income' },
-  { name: 'Salary', type: 'income' },
   { name: 'Freelance', type: 'income' },
   { name: 'Investments', type: 'income' },
   { name: 'Gifts', type: 'both' },
   { name: 'Other', type: 'both' },
 ];
-const DEFAULT_CATEGORY_NAMES = DEFAULT_CATEGORIES.map(c => c.name);
-
 const CATEGORY_COLORS = {
   'Food': '#ef4444', 'Transport': '#3b82f6', 'Housing': '#f59e0b', 'Utilities': '#8b5cf6',
   'Entertainment': '#ec4899', 'Healthcare': '#22c55e', 'Shopping': '#f97316', 'Other': '#6b7280',
-  'Paycheque': '#10b981', 'Salary': '#0ea5e9', 'Freelance': '#06b6d4', 'Investments': '#6366f1', 'Gifts': '#d946ef'
+  'Paycheque': '#10b981', 'Freelance': '#06b6d4', 'Investments': '#6366f1', 'Gifts': '#d946ef'
 };
 
 function getColor(cat) {
@@ -1047,6 +1044,13 @@ async function loadAllData() {
     DEFAULT_CATEGORIES.forEach(dc => {
       if (!categories.find(c => c.name === dc.name)) categories.push({ ...dc });
     });
+    saveAll();
+  }
+
+  // v1.0.2 migration: remove 'Salary' category (merged with Paycheque)
+  const salaryIdx = categories.findIndex(c => c.name === 'Salary');
+  if (salaryIdx !== -1) {
+    categories.splice(salaryIdx, 1);
     saveAll();
   }
 }
@@ -1964,7 +1968,7 @@ function renderCategoriesList() {
       <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${getColor(cat.name)}"></span>
       <span style="flex:1">${esc(cat.name)}</span>
       <span style="font-size:0.75rem; padding:2px 8px; border-radius:12px; background:${typeColor[cat.type]}20; color:${typeColor[cat.type]}">${typeLabel[cat.type]}</span>
-      ${DEFAULT_CATEGORY_NAMES.includes(cat.name) ? '' : `<button class="btn btn-danger btn-sm" onclick="removeCategory(${i})">Remove</button>`}
+      <button class="btn btn-danger btn-sm" onclick="removeCategory(${i})">Remove</button>
     </div>
   `).join('');
 }
