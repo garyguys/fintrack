@@ -284,14 +284,30 @@ tr:hover td { background: var(--surface2); }
 .nav-subitems.show { display: block; }
 .nav-subitems .nav-item { font-size: 0.82rem; padding: 8px 14px; }
 
-.task-completed td { opacity: 0.45; }
-.task-completed .task-name { text-decoration: line-through; }
+.task-completed td { opacity: 0.45; text-decoration: line-through; }
 .task-overdue { color: var(--red) !important; }
 
 .task-checkbox {
-  width: 18px; height: 18px;
-  accent-color: var(--accent);
+  appearance: none; -webkit-appearance: none;
+  width: 15px; height: 15px;
+  border: 2px solid var(--text-dim);
+  border-radius: 4px;
   cursor: pointer;
+  position: relative;
+  background: transparent;
+  flex-shrink: 0;
+}
+.task-checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.task-checkbox:checked::after {
+  content: '\2713';
+  position: absolute;
+  top: -2px; left: 1px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: bold;
 }
 
 .task-editable { cursor: pointer; position: relative; }
@@ -347,14 +363,6 @@ tr:hover td { background: var(--surface2); }
 .context-menu-item:hover { background: var(--surface2); }
 .context-menu-item.danger { color: var(--red); }
 
-.task-count-badge {
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.65rem;
-  padding: 1px 6px;
-  border-radius: 10px;
-  margin-left: auto;
-}
 
 /* App settings */
 .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -712,7 +720,6 @@ kbd {
     <div class="nav-section" id="nav-tasks" onclick="selectSection('tasks')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Tasks
-      <span class="task-count-badge" id="task-count-badge" style="display:none"></span>
     </div>
 
     <!-- Finances (collapsible section) -->
@@ -1048,7 +1055,7 @@ kbd {
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th style="width:40px"></th>
+              <th style="width:30px"></th>
               <th style="cursor:pointer" onclick="sortTasks('name')">Task Name <span id="sort-task-name-icon"></span></th>
               <th style="cursor:pointer" onclick="sortTasks('estTime')">Est. Time <span id="sort-task-time-icon"></span></th>
               <th style="cursor:pointer" onclick="sortTasks('dueDate')">Due Date <span id="sort-task-due-icon"></span></th>
@@ -2582,16 +2589,7 @@ function renderTasks() {
   updateTaskBadge();
 }
 
-function updateTaskBadge() {
-  const badge = document.getElementById('task-count-badge');
-  const count = todos.filter(t => !t.completed).length;
-  if (count > 0) {
-    badge.textContent = count;
-    badge.style.display = '';
-  } else {
-    badge.style.display = 'none';
-  }
-}
+function updateTaskBadge() {}
 
 function openTaskModal(id) {
   if (id) {

@@ -1,6 +1,6 @@
 {
   "name": "fintrack",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Personal Command Center",
   "main": "main.js",
   "scripts": {
