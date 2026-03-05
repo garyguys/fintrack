@@ -284,8 +284,34 @@ tr:hover td { background: var(--surface2); }
   cursor: pointer;
 }
 
-.task-name-cell { cursor: pointer; }
-.task-name-cell:hover { color: var(--accent); }
+.task-editable { cursor: pointer; position: relative; }
+.task-editable:hover { color: var(--accent); }
+
+.task-inline-input {
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+}
+
+.task-inline-select {
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.badge { cursor: pointer; }
 
 .context-menu {
   display: none;
@@ -2343,11 +2369,11 @@ function renderTasks() {
     return `
     <tr class="${t.completed ? 'task-completed' : ''}" oncontextmenu="showTaskContext(event, '${t.id}')">
       <td><input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTaskComplete('${t.id}')"></td>
-      <td class="task-name task-name-cell" onclick="openTaskModal('${t.id}')">${esc(t.name)}</td>
-      <td>${t.estTime ? t.estTime + ' min' : '<span style="color:var(--text-dim)">—</span>'}</td>
-      <td class="${isOverdue ? 'task-overdue' : ''}">${t.dueDate ? formatDate(t.dueDate) : '<span style="color:var(--text-dim)">—</span>'}</td>
-      <td><span class="badge badge-${t.priority}">${PRIORITY_LABELS[t.priority]}</span></td>
-      <td style="color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(t.description || '')}</td>
+      <td class="task-name task-editable" onclick="inlineEdit('${t.id}','name',this)">${esc(t.name)}</td>
+      <td class="task-editable" onclick="inlineEdit('${t.id}','estTime',this)">${t.estTime ? t.estTime + ' min' : '<span style="color:var(--text-dim)">—</span>'}</td>
+      <td class="task-editable ${isOverdue ? 'task-overdue' : ''}" onclick="inlineEdit('${t.id}','dueDate',this)">${t.dueDate ? formatDateLong(t.dueDate) : '<span style="color:var(--text-dim)">—</span>'}</td>
+      <td class="task-editable" onclick="inlineEdit('${t.id}','priority',this)"><span class="badge badge-${t.priority}">${PRIORITY_LABELS[t.priority]}</span></td>
+      <td class="task-editable" onclick="inlineEdit('${t.id}','description',this)" style="color:var(--text-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(t.description || '') || '<span style="color:var(--text-dim)">—</span>'}</td>
     </tr>`;
   }).join('');
 
@@ -2471,6 +2497,84 @@ function ctxDeleteTask() {
 }
 
 document.addEventListener('click', hideTaskContext);
+
+// Inline editing
+function inlineEdit(id, field, td) {
+  // Don't edit if already editing
+  if (td.querySelector('input, select')) return;
+  const t = todos.find(t => t.id === id);
+  if (!t) return;
+
+  if (field === 'priority') {
+    const sel = document.createElement('select');
+    sel.className = 'task-inline-select';
+    ['most-important', 'high', 'medium', 'low'].forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = PRIORITY_LABELS[p];
+      if (p === t.priority) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    td.innerHTML = '';
+    td.appendChild(sel);
+    sel.focus();
+    sel.addEventListener('change', () => { t.priority = sel.value; saveAll(); renderTasks(); });
+    sel.addEventListener('blur', () => renderTasks());
+  } else if (field === 'dueDate') {
+    const inp = document.createElement('input');
+    inp.type = 'date';
+    inp.className = 'task-inline-input';
+    inp.value = t.dueDate || '';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    const commit = () => { t.dueDate = inp.value || null; saveAll(); renderTasks(); };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderTasks(); });
+  } else if (field === 'estTime') {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.className = 'task-inline-input';
+    inp.value = t.estTime || '';
+    inp.placeholder = 'min';
+    inp.min = '0';
+    inp.style.width = '70px';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { t.estTime = parseInt(inp.value) || null; saveAll(); renderTasks(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderTasks(); });
+  } else if (field === 'name') {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'task-inline-input';
+    inp.value = t.name;
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { const v = inp.value.trim(); if (v) { t.name = v; saveAll(); } renderTasks(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderTasks(); });
+  } else if (field === 'description') {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'task-inline-input';
+    inp.value = t.description || '';
+    inp.placeholder = 'Description...';
+    td.innerHTML = '';
+    td.style.overflow = 'visible';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { t.description = inp.value.trim(); saveAll(); renderTasks(); };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') renderTasks(); });
+  }
+}
 
 // ========== CSV IMPORT/EXPORT ==========
 function exportCSV() {
@@ -2601,6 +2705,15 @@ function formatDate(dateStr) {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');
   return `${m}/${d}/${y}`;
+}
+
+function formatDateLong(dateStr) {
+  if (!dateStr) return '';
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const day = d;
+  const suffix = (day % 10 === 1 && day !== 11) ? 'st' : (day % 10 === 2 && day !== 12) ? 'nd' : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+  return `${months[m - 1]} ${day}${suffix}, ${y}`;
 }
 
 function esc(str) {
