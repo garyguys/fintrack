@@ -1,10 +1,10 @@
-# PFlux - Personal Command Center
+# PersonalHQ - Personal Command Center
 
 ## Overview
-PFlux (formerly FinTrack) is a personal desktop productivity app built as a single-page HTML app wrapped in Electron. It started as a finance tracker and has evolved into a broader personal command center with two top-level sections: **Tasks & Ideas** (to-do list + idea capture) and **Finances** (budget/expense tracking). Designed for personal use and shared with a small group of friends.
+PersonalHQ (formerly PFlux, originally FinTrack) is a personal desktop productivity app built as a single-page HTML app wrapped in Electron. It started as a finance tracker and has evolved into a broader personal command center with two top-level sections: **Tasks & Ideas** (to-do list + idea capture) and **Finances** (budget/expense tracking). Designed for personal use and shared with a small group of friends.
 
 **Repo:** https://github.com/garyguys/fintrack
-**Current version:** 1.3.0
+**Current version:** 1.4.0
 
 ## Architecture
 
@@ -18,26 +18,26 @@ PFlux (formerly FinTrack) is a personal desktop productivity app built as a sing
 
 ### File Structure
 ```
-├── index.html        # Entire app UI, styles, and logic (single file ~2900+ lines)
+├── index.html        # Entire app UI, styles, and logic (single file ~3200+ lines)
 ├── main.js           # Electron main process: window creation, file I/O (IPC), auto-updater, restart-for-update IPC
 ├── preload.js        # Context bridge: exposes fileStorage API + restartForUpdate to renderer
 ├── package.json      # Dependencies, version, electron-builder config, GitHub publish config
 ├── CLAUDE.md         # This file — project context for AI agents
 ├── .gitignore        # Ignores node_modules/ and dist/
 └── dist/             # Build output (gitignored)
-    ├── PFlux-Setup-X.X.X.exe
-    ├── PFlux-Setup-X.X.X.exe.blockmap
+    ├── PersonalHQ-Setup-X.X.X.exe
+    ├── PersonalHQ-Setup-X.X.X.exe.blockmap
     ├── latest.yml
     └── win-unpacked/
 ```
 
 ### Key Design Decisions
-- **Single HTML file:** All UI, CSS, and JS live in `index.html`. This was intentional for simplicity — no bundler, no framework overhead. When editing, be aware the file is large (~2900+ lines).
+- **Single HTML file:** All UI, CSS, and JS live in `index.html`. This was intentional for simplicity — no bundler, no framework overhead. When editing, be aware the file is large (~3200+ lines).
 - **Dual storage mode:** The app detects `window.fileStorage` (injected by Electron's preload) to decide between file-based and localStorage. This means the app still works if you just open `index.html` in a browser for quick testing.
 - **Atomic file writes:** `main.js` writes to a `.tmp` file then renames to prevent data corruption on crash.
 - **Debounced saves:** The renderer batches rapid `saveAll()` calls — writes to localStorage immediately (cache) and debounces the IPC file write by 300ms.
 - **No code signing:** The build skips code signing (`signAndEditExecutable: false`, `signingHashAlgorithms: null` in package.json). Windows SmartScreen will warn on first install — users click "More info" > "Run anyway".
-- **Rebrand continuity:** The app was renamed from FinTrack to PFlux in v1.1.0. The `appId` remains `com.fintrack.app` for update compatibility, and the data directory remains `%APPDATA%/FinTrack/` to preserve existing user data. The npm package name in package.json is also still `fintrack`.
+- **Rebrand continuity:** The app was renamed FinTrack → PFlux (v1.1.0) → PersonalHQ (v1.4.0). The `appId` remains `com.fintrack.app` for update compatibility, and the data directory remains `%APPDATA%/FinTrack/` to preserve existing user data. The npm package name in package.json is also still `fintrack`.
 
 ## App Structure — Sections & Navigation
 
@@ -140,7 +140,7 @@ All data is stored in a single JSON object (either in `data.json` or across loca
   - `update-status` (main→renderer): sends `{ status, info }` with status values: `checking`, `available`, `downloading`, `ready`, `error`
   - `restart-for-update` (renderer→main): triggers `autoUpdater.quitAndInstall()`
 - **Required release artifacts:** The `.exe`, `.blockmap`, and `latest.yml` must all be uploaded to each GitHub Release.
-- **IMPORTANT — Filename format:** The `artifactName` in package.json is set to `${productName}-Setup-${version}.${ext}` which produces filenames with **hyphens** (e.g., `PFlux-Setup-1.2.6.exe`). This is critical because GitHub converts spaces in uploaded filenames to dots, which would break the match with `latest.yml`. Never change this to use spaces.
+- **IMPORTANT — Filename format:** The `artifactName` in package.json is set to `${productName}-Setup-${version}.${ext}` which produces filenames with **hyphens** (e.g., `PersonalHQ-Setup-1.4.0.exe`). This is critical because GitHub converts spaces in uploaded filenames to dots, which would break the match with `latest.yml`. Never change this to use spaces.
 
 ## Release Workflow
 
@@ -152,7 +152,7 @@ npm run build
 # 4. Commit and push
 git add -A && git commit -m "v1.x.x: description" && git push
 # 5. Create GitHub Release (upload all 3 artifacts — note hyphenated filenames)
-gh release create v1.x.x "dist/PFlux-Setup-1.x.x.exe" "dist/PFlux-Setup-1.x.x.exe.blockmap" "dist/latest.yml" --title "PFlux v1.x.x" --notes "What changed"
+gh release create v1.x.x "dist/PersonalHQ-Setup-1.x.x.exe" "dist/PersonalHQ-Setup-1.x.x.exe.blockmap" "dist/latest.yml" --title "PersonalHQ v1.x.x" --notes "What changed"
 ```
 
 ## Git Config (repo-local)
@@ -182,3 +182,4 @@ gh release create v1.x.x "dist/PFlux-Setup-1.x.x.exe" "dist/PFlux-Setup-1.x.x.ex
 - **1.2.5** — Fixed checkbox rendering (hidden input + styled span pattern)
 - **1.2.6** — Applied styled checkboxes to transactions and show-completed filter
 - **1.3.0** — Added Ideas sub-tab alongside Tasks with pill-style toggle, context-aware Ctrl+N
+- **1.4.0** — Rebranded to PersonalHQ

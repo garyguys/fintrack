@@ -1,13 +1,13 @@
 {
   "name": "fintrack",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Personal Command Center",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win"
   },
-  "author": "PFlux",
+  "author": "PersonalHQ",
   "license": "MIT",
   "devDependencies": {
     "electron": "^33.0.0",
@@ -15,7 +15,7 @@
   },
   "build": {
     "appId": "com.fintrack.app",
-    "productName": "PFlux",
+    "productName": "PersonalHQ",
     "directories": {
       "output": "dist"
     },
